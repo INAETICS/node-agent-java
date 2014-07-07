@@ -1,0 +1,84 @@
+#!/bin/bash
+
+# Control node-agent-service build|run|stop|start with docker
+#
+# This is just a very simple helper. Use docker directly
+# for full options (see http://www.docker.com/)
+
+COMMAND=$1
+
+PWD=`pwd`
+cd $(dirname $0)
+cd $PWD
+
+_locate_aptcacher () {
+  # TODO locate in Etcd
+  echo "172.17.8.200:3142"
+}
+
+_locate_jdkarchive () {
+ echo `tools/java-installer/java-download`
+}
+
+build_image () {
+
+  local builddir="/tmp/build-$RANDOM"
+  mkdir $builddir
+  cp -rv . $builddir
+  
+  local aptcacher=`_locate_aptcacher`
+  if [ ! "$aptcacher" == "" ]; then
+    sed -i "/##APT_PROXY/ a\RUN echo \"Acquire::http::Proxy \\\\\"http://$aptcacher\\\\\";\" > /etc/apt/apt.conf.d/01proxy" $builddir/Dockerfile
+  fi;
+
+  local jdkarchive=`_locate_jdkarchive`
+  if [ ! "$jdkarchive" == "" ]; then
+    cp -v $jdkarchive $builddir/tools/java-installer
+    sed -i "/##JDK_INSTALL/ a\ADD tools/java-installer /tmp/java-installer/\nRUN /tmp/java-installer/java-install; rm -Rf /tmp/java-installer" $builddir/Dockerfile
+  fi
+  
+  docker build -t inaetics/node-agent $builddir
+  rm -rf $builddir
+}
+
+start_up () {
+  docker rm node-agent-service >/dev/null 2>/dev/null
+  docker start node-agent-service >/dev/null 2>/dev/null
+  if [ $? -gt 0 ]; then
+    docker run --name node-agent-service -d -p 8080:8080 inaetics/node-agent java -jar /tmp/org.apache.ace.agent.launcher.felix.jar -v
+  fi
+}
+
+clean_up () {
+    docker stop node-agent-service > /dev/null 2>/dev/null
+    #docker rm node-agent-service >/dev/null 2>/dev/null
+    exit
+}
+
+case "$COMMAND" in
+  build)
+    echo "Building image inaetics/node-agent"
+    build_image
+    ;;
+  run)
+    echo "Running Node Agent Service" 
+    start_up
+    trap clean_up SIGHUP SIGINT SIGTERM
+    while true; do sleep 10; done
+    ;;
+  start)
+    echo "Starting Node Agent Service" 
+    start_up
+    ;;
+  stop)
+    echo "Stopping Node Agent Service" 
+    clean_up
+    ;;
+  *)
+    echo "Usage: $0 {build|run|start|stop}"
+    exit 1
+    ;;
+esac
+
+cd $PWD
+exit 0
