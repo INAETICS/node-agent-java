@@ -1,4 +1,4 @@
-# Dockerfile for inaetics/apt-cacher-service
+# Dockerfile for inaetics/node-agent-service
 FROM ubuntu:14.04
 MAINTAINER Bram de Kruijff <bdekruijff@gmail.com> (@bdekruijff)
 
