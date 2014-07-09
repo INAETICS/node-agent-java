@@ -6,10 +6,16 @@
 # for full options (see http://www.docker.com/)
 
 COMMAND=$1
+AGENTID=$2
 
 PWD=`pwd`
 cd $(dirname $0)
 cd $PWD
+
+_locate_provisioningurls () {
+  # TODO locate in Etcd
+  echo "http://172.17.8.201:8080"
+}
 
 _locate_aptcacher () {
   # TODO locate in Etcd
@@ -42,16 +48,25 @@ build_image () {
 }
 
 start_up () {
-  docker rm node-agent-service >/dev/null 2>/dev/null
-  docker start node-agent-service >/dev/null 2>/dev/null
-  if [ $? -gt 0 ]; then
-    docker run --name node-agent-service -d -p 8080:8080 inaetics/node-agent java -jar /tmp/org.apache.ace.agent.launcher.felix.jar -v
+
+  if [ "$AGENTID" == "" ]; then
+    echo "Missing AGENTID! Aborting..."
+    exit 1
   fi
+
+  local provisioningurls=`_locate_provisioningurls`
+  if [ "$provisioningurls" == "" ]; then
+    echo "Unable to locate provisioning service! Aborting.."
+    exit 1
+  fi
+
+  docker run --name node-agent-service -d -p 8080:8080 inaetics/node-agent \
+    java -Dagent.identification.agentid=$AGENTID -Dagent.discovery.serverurls=$provisioningurls -jar /tmp/org.apache.ace.agent.launcher.felix.jar -v
 }
 
 clean_up () {
     docker stop node-agent-service > /dev/null 2>/dev/null
-    #docker rm node-agent-service >/dev/null 2>/dev/null
+    docker rm node-agent-service >/dev/null 2>/dev/null
     exit
 }
 
