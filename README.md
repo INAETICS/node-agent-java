@@ -3,7 +3,7 @@ Node Agent Service
 
 Run an INAETICS Node Agent as a CoreOS/Docker service.
 
-Run on localmachine
+Run on localhost
 -------------------
 
 * Install Docker
