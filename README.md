@@ -6,10 +6,9 @@ Run an INAETICS Node Agent as a CoreOS/Docker service.
 Run on localhost
 -------------------
 
-* Install Docker
+* Install Git, Docker & Etcd
 * Clone this repository
-* Run `./node-agent-service build
-* Run `./node-agent-service run`
+* Run `./node-agent-service <agentid>`
 * TODO no frontend yet
 
 
