@@ -1,99 +1,95 @@
 #!/bin/bash
 
-# Control node-agent-service build|run|stop|start with docker
-#
-# This is just a very simple helper. Use docker directly
-# for full options (see http://www.docker.com/)
+# Starts a node-agent-service with docker
 
-COMMAND=$1
-AGENTID=$2
-
-PWD=`pwd`
+ORGDIR=`pwd`
 cd $(dirname $0)
-cd $PWD
 
-_locate_provisioningurls () {
-  # TODO locate in Etcd
-  echo "http://172.17.8.201:8080"
-}
+source tools/build.sh
+source tools/etcdctl.sh
+source tools/docker.sh
 
-_locate_aptcacher () {
-  # TODO locate in Etcd
-  echo "172.17.8.200:3142"
-}
+SVC_AGENTID=$1
+SVC_IMAGENAME="inaetics/node-agent:latest"
+SVC_IMAGEREPO="https://github.com/INAETICS/node-agent-service"
 
-_locate_jdkarchive () {
- echo `tools/java-installer/java-download`
-}
-
-build_image () {
-
-  local builddir="/tmp/build-$RANDOM"
-  mkdir $builddir
-  cp -rv . $builddir
-  
-  local aptcacher=`_locate_aptcacher`
-  if [ ! "$aptcacher" == "" ]; then
-    sed -i "/##APT_PROXY/ a\RUN echo \"Acquire::http::Proxy \\\\\"http://$aptcacher\\\\\";\" > /etc/apt/apt.conf.d/01proxy" $builddir/Dockerfile
-  fi;
-
-  local jdkarchive=`_locate_jdkarchive`
-  if [ ! "$jdkarchive" == "" ]; then
-    cp -v $jdkarchive $builddir/tools/java-installer
-    sed -i "/##JDK_INSTALL/ a\ADD tools/java-installer /tmp/java-installer/\nRUN /tmp/java-installer/java-install; rm -Rf /tmp/java-installer" $builddir/Dockerfile
-  fi
-  
-  docker build -t inaetics/node-agent $builddir
-  rm -rf $builddir
-}
-
-start_up () {
-
-  if [ "$AGENTID" == "" ]; then
-    echo "Missing AGENTID! Aborting..."
-    exit 1
-  fi
-
-  local provisioningurls=`_locate_provisioningurls`
-  if [ "$provisioningurls" == "" ]; then
-    echo "Unable to locate provisioning service! Aborting.."
-    exit 1
-  fi
-
-  docker run --name node-agent-service -d -p 8080:8080 inaetics/node-agent \
-    java -Dagent.identification.agentid=$AGENTID -Dagent.discovery.serverurls=$provisioningurls -jar /tmp/org.apache.ace.agent.launcher.felix.jar -v
-}
+if [ "$SVC_AGENTID" == "" ]; then
+  echo "Missing AGENTID! Aborting..."
+  exit 1
+fi
 
 clean_up () {
     docker stop node-agent-service > /dev/null 2>/dev/null
     docker rm node-agent-service >/dev/null 2>/dev/null
-    exit
+    cd $ORGDIR
+    exit 0
 }
+trap clean_up SIGHUP SIGINT SIGTERM
 
-case "$COMMAND" in
-  build)
-    echo "Building image inaetics/node-agent"
-    build_image
-    ;;
-  run)
-    echo "Running Node Agent Service" 
-    start_up
-    trap clean_up SIGHUP SIGINT SIGTERM
-    while true; do sleep 10; done
-    ;;
-  start)
-    echo "Starting Node Agent Service" 
-    start_up
-    ;;
-  stop)
-    echo "Stopping Node Agent Service" 
-    clean_up
-    ;;
-  *)
-    echo "Usage: $0 {build|run|start|stop}"
-    exit 1
-    ;;
-esac
 
-cd $PWD
-exit 0
+
+echo "Looking for image: ${SVC_IMAGENAME}"
+svcimage=$(docker/find_image $SVC_IMAGENAME)
+if [ ! "$svcimage" == "" ]; then
+  echo "Using local image $svcimage"
+else
+  echo "No local image found!.." 
+  echo "Trying registries.." 
+  registries=($(etcd/values /inaetics/docker-registry-service))
+  svcimage=$(docker/pull_image $SVC_IMAGENAME "${registries[@]}")
+
+  if [ ! "$svcimage" == "" ]; then
+    echo "Using pulled image $svcimage"
+  else
+    echo "No upstream image found!.." 
+    echo "Attempting local build.." 
+    tmpdir=$(mktemp -d)
+    git clone $SVC_IMAGEREPO $tmpdir
+    builder/build_image $SVC_IMAGENAME $tmpdir
+    svcimage=$(docker/find_image $SVC_IMAGENAME)
+
+    if [ "$svcimage" == "" ]; then
+      echo "Unable to locate or build image.... aborting!!" 1>&2
+      exit 1
+    fi
+  fi
+fi
+
+provisioning_key=""
+provisioning_value=""
+while true; do
+
+  if [ ! "$provisioning_key" == "" ]; then
+    current_value=$(etcd/value $provisioning_key)
+    if [ $? -gt 0 ] || [ ! "$current_value" == "$provisioning_value" ]; then
+      echo "agent stop: provisioning lost: $provisioning_key"
+      docker stop node-agent-service > /dev/null 2>/dev/null
+      docker rm node-agent-service >/dev/null 2>/dev/null
+      provisioning_key=""
+      provisioning_value=""
+    fi
+  fi
+
+  if [ "$provisioning_key" == "" ]; then
+    current_keys=($(etcd/keys /inaetics/node-provisioning-service))
+    if [ ${#current_keys[@]} -gt 0 ]; then
+      provisioning_key=${current_keys[0]}
+      provisioning_value=$(etcd/value $provisioning_key)
+      echo "agent start: provisioning found: $provisioning_value"
+      docker run --name node-agent-service -d -p 8080:8080 $svcimage \
+        java -Dagent.identification.agentid=$SVC_AGENTID \
+             -Dagent.discovery.serverurls=http://$provisioning_value \
+             -jar /tmp/org.apache.ace.agent.launcher.felix.jar -v >/dev/null 2>/dev/null
+    fi
+  fi
+
+  if [ "$provisioning_key" != "" ]; then
+    echo "agent running with provisioning $provisioning_value"
+  else
+    echo "agent waiting for provisiong sercvice.."
+  fi
+
+  sleep 10 &
+  wait $!
+
+done
