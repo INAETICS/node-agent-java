@@ -7,15 +7,10 @@ MAINTAINER Bram de Kruijff <bdekruijff@gmail.com> (@bdekruijff)
 # Generic update & tooling
 ENV DEBIAN_FRONTEND noninteractive
 RUN apt-get update && apt-get upgrade -yq && apt-get install -yq --no-install-recommends \
-  build-essential \
   java-common \
-  golang \
-  curl \
-  git
+  && apt-get clean
 
 ##JDK_INSTALL - instruct builder to install a JDK
 
 # Node agent resources
 ADD resources /tmp
-
-RUN apt-get clean
