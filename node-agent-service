@@ -26,8 +26,6 @@ clean_up () {
 }
 trap clean_up SIGHUP SIGINT SIGTERM
 
-
-
 echo "Looking for image: ${SVC_IMAGENAME}"
 svcimage=$(docker/find_image $SVC_IMAGENAME)
 if [ ! "$svcimage" == "" ]; then
@@ -77,9 +75,7 @@ while true; do
       provisioning_value=$(etcd/value $provisioning_key)
       echo "agent start: provisioning found: $provisioning_value"
       docker run --name node-agent-service -d -p 8080:8080 $svcimage \
-        java -Dagent.identification.agentid=$SVC_AGENTID \
-             -Dagent.discovery.serverurls=http://$provisioning_value \
-             -jar /tmp/org.apache.ace.agent.launcher.felix.jar -v >/dev/null 2>/dev/null
+        /tmp/node-agent.sh $SVC_AGENTID http://$provisioning_value
     fi
   fi
 
