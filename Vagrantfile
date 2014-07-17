@@ -5,8 +5,8 @@ require 'fileutils'
 Vagrant.require_version ">= 1.6.0"
 
 $instance_name="node-agent-service-%02d"
-$instance_ip="172.17.8.1%02d"
-$num_instances = 2
+$instance_ip="172.17.8.2%01d"
+$num_instances = 1
 
 $coreos_channel="coreos-alpha"
 $coreos_version=">= 361.0.0"
@@ -44,7 +44,6 @@ Vagrant.configure("2") do |config|
 
       config.vm.provision :file, :source => "coreos-userdata", :destination => "/tmp/vagrantfile-user-data"
       config.vm.provision :shell, :inline => "mv /tmp/vagrantfile-user-data /var/lib/coreos-vagrant/", :privileged => true
-
     end
   end
 end
