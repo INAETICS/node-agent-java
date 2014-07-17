@@ -82,7 +82,7 @@ while true; do
   if [ "$provisioning_key" != "" ]; then
     echo "agent running with provisioning $provisioning_value"
   else
-    echo "agent waiting for provisiong sercvice.."
+    echo "agent waiting for provisioning service.."
   fi
 
   sleep 10 &
