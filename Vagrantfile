@@ -5,7 +5,7 @@ require 'fileutils'
 Vagrant.require_version ">= 1.6.0"
 
 $instance_name="node-agent-service-%02d"
-$instance_ip="172.17.8.2%01d"
+$instance_ip="172.17.8.2%02d"
 $num_instances = 1
 
 $coreos_channel="coreos-alpha"
