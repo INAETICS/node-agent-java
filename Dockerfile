@@ -7,7 +7,9 @@ MAINTAINER Bram de Kruijff <bdekruijff@gmail.com> (@bdekruijff)
 # Generic update & tooling
 ENV DEBIAN_FRONTEND noninteractive
 RUN apt-get update && apt-get upgrade -yq && apt-get install -yq --no-install-recommends \
+  curl \
   java-common \
+  jq \
   && apt-get clean
 
 ##JDK_INSTALL - instruct builder to install a JDK

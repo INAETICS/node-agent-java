@@ -1,91 +1,170 @@
 #!/bin/bash
-
 # Starts a node-agent-service with docker
+#
+# (C) 2014 INAETICS, <www.inaetics.org> - Apache License v2.
 
-ORGDIR=`pwd`
-cd $(dirname $0)
+#
+# Config
+#
+VERBOSE_LOG=false
+BUILDER_DIR="/var/lib/docker-image-builder"
+BUILDER_REPO="https://github.com/INAETICS/docker-image-builder.git"
+BUILDER_SCRIPT="docker-image-builder"
+SERVICE_NAME="node-agent-service"
+SERVICE_IMAGE="inaetics/node-agent:latest"
+SERVICE_REPO="https://github.com/INAETICS/node-agent-service.git"
+RETRY_INTERVAL=30
+UPDATE_INTERVAL=31
 
-source tools/build.sh
-source tools/etcdctl.sh
-source tools/docker.sh
+#
+# Global state
+#
+current_imageid=""
+located_imageid=""
+containerid=""
 
-SVC_AGENTID=$1
-SVC_IMAGENAME="inaetics/node-agent:latest"
-SVC_IMAGEREPO="https://github.com/INAETICS/node-agent-service"
+#
+# Functions
+#
 
-if [ "$SVC_AGENTID" == "" ]; then
-  echo "Missing AGENTID! Aborting..."
-  exit 1
-fi
+verbose () {
+  if $VERBOSE_LOG; then $@; else $@ &> /dev/null; fi
+  return $?
+}
+
+verbose_err () {
+  if $VERBOSE_LOG; then $@; else $@ 1> /dev/null; fi
+  return $?
+}
+
+verbose_out () {
+  if $VERBOSE_LOG; then $@; else $@ 2> /dev/null; fi
+  return $?
+}
+
+
+get_docker_ip () {
+  ifconfig docker0 | grep "inet " | awk '{print $2}' | awk '{print $1}'
+}
+
+get_etcd_host () {
+  echo "$(get_docker_ip):4001"
+}
+
+update_builder () {
+  if [ ! -d "$BUILDER_DIR" ]; then 
+    echo "Cloning image builder"
+    git clone $BUILDER_REPO $BUILDER_DIR
+  else 
+    echo "Updating image builder"
+    cd $BUILDER_DIR
+    git pull
+  fi
+  if [ $? -ne 0 ]; then
+    echo "Builder update failed!" 1>&2
+    return 1
+  fi
+  return 0
+}
+
+locate_image () {
+  echo "Locating service image"
+  located_imageid=$(verbose_out $BUILDER_DIR/$BUILDER_SCRIPT locate $SERVICE_IMAGE $SERVICE_REPO)
+  if [ $? -ne 0 ]; then
+    echo "Image locate failed!" 1>&2
+    return 1
+  fi
+  echo "Located image ${located_image:0:12}"
+  return 0
+}
+
+start_service () {
+  echo "Starting service container"
+  current_imageid=$located_imageid
+  etcd_host=$(get_etcd_host)
+  containerid=$(docker run -d -p 8080:8080 -e ETCD_HOST=$etcd_host $current_imageid /tmp/node-agent.sh $AGENT_ID)
+  if [ $? -ne 0 ]; then
+    echo "Container start failed!" 1>&2
+    if [ "$containerid" != "" ]; then
+      docker rm -f $containerid
+      containerid=""
+    fi
+    return 1
+  fi
+  echo "Started container ${containerid:0:12}"
+  return 0 
+}
+
+stop_service () {
+  echo "Stopping service container"
+  if [ "$containerid" != "" ]; then
+    docker rm -f $containerid
+    echo "Stopped container ${containerid:0:12}"
+    containerid=""
+  fi
+  return 0
+}
 
 clean_up () {
-    docker stop node-agent-service > /dev/null 2>/dev/null
-    docker rm node-agent-service >/dev/null 2>/dev/null
-    cd $ORGDIR
+    echo "Running cleanup.."
+    stop_service
     exit 0
 }
+
+#
+# Main
+#
 trap clean_up SIGHUP SIGINT SIGTERM
 
-echo "Looking for image: ${SVC_IMAGENAME}"
-svcimage=$(docker/find_image $SVC_IMAGENAME)
-if [ ! "$svcimage" == "" ]; then
-  echo "Using local image $svcimage"
-else
-  echo "No local image found!.." 
-  echo "Trying registries.." 
-  registries=($(etcd/values /inaetics/docker-registry-service))
-  svcimage=$(docker/pull_image $SVC_IMAGENAME "${registries[@]}")
-
-  if [ ! "$svcimage" == "" ]; then
-    echo "Using pulled image $svcimage"
-  else
-    echo "No upstream image found!.." 
-    echo "Attempting local build.." 
-    tmpdir=$(mktemp -d)
-    git clone $SVC_IMAGEREPO $tmpdir
-    builder/build_image $SVC_IMAGENAME $tmpdir
-    svcimage=$(docker/find_image $SVC_IMAGENAME)
-
-    if [ "$svcimage" == "" ]; then
-      echo "Unable to locate or build image.... aborting!!" 1>&2
-      exit 1
-    fi
+AGENT_ID=$1
+for var in "$@"; do
+  if [ "$var" == "-v" ]; then
+echo "log is true"
+    VERBOSE_LOG=true
   fi
-fi
+done
 
-provisioning_key=""
-provisioning_value=""
+echo "-----------------------------------------------------------------------"
+echo "Starting service controller"
+echo "-----------------------------------------------------------------------"
+echo -e "VERBOSE LOG\t: $VERBOSE_LOG (use -v option to enable)"
+echo -e "BUILDER_DIR\t: $BUILDER_DIR"
+echo -e "BUILDER_REPO\t: $BUILDER_REPO"
+echo -e "BUILDER_SCRIPT\t: $BUILDER_SCRIPT"
+echo -e "SERVICE_NAME\t: $SERVICE_NAME"
+echo -e "SERVICE_IMAGE\t: $SERVICE_IMAGE"
+echo -e "SERVICE_REPO\t: $SERVICE_REPO"
+echo -e "UPDATE_INTERVAL\t: $UPDATE_INTERVAL"
+echo -e "RETRY_INTERVAL\t: $RETRY_INTERVAL"
+echo "-----------------------------------------------------------------------"
+
 while true; do
 
-  if [ ! "$provisioning_key" == "" ]; then
-    current_value=$(etcd/value $provisioning_key)
-    if [ $? -gt 0 ] || [ ! "$current_value" == "$provisioning_value" ]; then
-      echo "agent stop: provisioning lost: $provisioning_key"
-      docker stop node-agent-service > /dev/null 2>/dev/null
-      docker rm node-agent-service >/dev/null 2>/dev/null
-      provisioning_key=""
-      provisioning_value=""
+  verbose_err update_builder
+  if [ $? -eq 0 ]; then
+    verbose_err locate_image
+    if [ $? -eq 0 ] && [ "$current_imageid" != "$located_imageid" ]; then
+      if [ "$containerid" != "" ]; then
+        echo "Restarting with image ${located_imageid:0:12}"
+        verbose_err stop_service
+        verbose_err start_service
+      else
+        echo "Starting with image ${located_imageid:0:12}"
+        verbose_err start_service
+      fi
     fi
   fi
 
-  if [ "$provisioning_key" == "" ]; then
-    current_keys=($(etcd/keys /inaetics/node-provisioning-service))
-    if [ ${#current_keys[@]} -gt 0 ]; then
-      provisioning_key=${current_keys[0]}
-      provisioning_value=$(etcd/value $provisioning_key)
-      echo "agent start: provisioning found: $provisioning_value"
-      docker run --name node-agent-service -d -p 8080:8080 $svcimage \
-        /tmp/node-agent.sh $SVC_AGENTID http://$provisioning_value
-    fi
-  fi
-
-  if [ "$provisioning_key" != "" ]; then
-    echo "agent running with provisioning $provisioning_value"
+  if [ "$containerid" == "" ]; then
+    echo "Not running due to previous errors"
+    echo "Will Retry in $RETRY_INTERVAL seconds..."
+    sleep $RETRY_INTERVAL &
+    wait $!
   else
-    echo "agent waiting for provisioning service.."
+    echo "Running in container ${containerid:0:12}"
+    echo "Will check for updates in $UPDATE_INTERVAL seconds..."
+    sleep $UPDATE_INTERVAL &
+    wait $!
   fi
-
-  sleep 10 &
-  wait $!
 
 done
