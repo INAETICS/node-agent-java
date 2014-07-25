@@ -14,7 +14,7 @@ SERVICE_NAME="node-agent-service"
 SERVICE_IMAGE="inaetics/node-agent:latest"
 SERVICE_REPO="https://github.com/INAETICS/node-agent-service.git"
 RETRY_INTERVAL=30
-UPDATE_INTERVAL=31
+UPDATE_INTERVAL=300
 
 #
 # Global state
