@@ -16,7 +16,38 @@ RETRY_INTERVAL=20
 #
 # Libs
 #
-source etcdlib.sh
+source etcdctl.sh
+
+# Wraps a function call to redirect or filter stdout/stderr
+# depending on the debug setting
+#   args: $@ - the wrapped call
+#   return: the wrapped call's return
+_call () {
+  if [ "$BUILDER_DEBUG" != "true"  ]; then
+    $@ &> /dev/null
+    return $?
+  else
+    $@ 2>&1 | awk '{print "[DEBUG] "$0}' >&2
+    return ${PIPESTATUS[0]}
+  fi
+}
+
+# Echo a debug message to stderr, perpending each line
+# with a debug prefix.
+#   args: $@ - the echo args
+_dbg() {
+  if [ "$BUILDER_DEBUG" == "true" ]; then
+    echo $@ | awk '{print "[DEBUG] "$0}' >&2
+  fi
+}
+
+# Echo a log message to stderr, perpending each line
+# with a info prefix.
+#   args: $@ - the echo args
+_log() {
+  echo $@ | awk '{print "[INFO] "$0}' >&2
+}
+
 
 #
 # State
