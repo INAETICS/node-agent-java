@@ -36,7 +36,7 @@ Vagrant.configure("2") do |config|
       end
 
       # Provision service with nfs
-      # config.vm.synced_folder ".", "/var/lib/node-agent-service", id: "node-agent-service", :nfs => true, :mount_options => ['nolock,vers=3,udp']
+      # config.vm.synced_folder ".", "/mnt/node-agent-service", id: "node-agent-service", :nfs => true, :mount_options => ['nolock,vers=3,udp']
 
       # Provision service with shell
       # config.vm.provision :file, :source => ".", :destination => "/tmp/node-agent-service"
