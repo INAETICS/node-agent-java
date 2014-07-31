@@ -96,9 +96,12 @@ start_agent () {
     -Dgosh.args=--nointeractive \
     -jar org.apache.ace.agent.launcher.felix.jar -v framework.org.osgi.framework.system.packages.extra=sun.misc &
   agent_pid=$!
+
+  etcd/put "/inaetics/node-agent-service/$agent_id" "$agent_ipv4:8080"
 }
 
 stop_agent () {
+  etcd/rm "/inaetics/node-agent-service/$agent_id"
   if [ "$agent_pid" != "" ]; then
     kill -SIGTERM $agent_pid
     agent_pid=""
@@ -119,6 +122,12 @@ trap clean_up SIGHUP SIGINT SIGTERM
 agent_id=$1
 if [ "$agent_id" == "" ]; then
   echo "agent_id param required!"
+  exit 1
+fi
+
+agent_ipv4=$2
+if [ "$agent_ipv4" == "" ]; then
+  echo "agent_ipv4 param required!"
   exit 1
 fi
 

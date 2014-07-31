@@ -102,4 +102,27 @@ etcd/put () {
   fi
 }
 
+# Sets the value for an etcd key
+#  args: $1 - key, etcd key
+#    $2 - peers, etcd peers
+#  echo: [[<value>]...], if success
+#  return: etcdctl exit code
+etcd/rm () {
+  _dbg "-> $FUNCNAME - args: $@"
+  local key=$1
+  local peers=${2:-$ETCDCTL_PEERS}
+  if [ -n "$peers" ]; then
+    _call etcdctl --peers "$peers" rm "$key"
+  else
+    _call etcdctl rm "$key"
+  fi
+  local code=$?
+  if [ $code -ne 0 ]; then
+    _dbg "Failed to set value for key: $key $value"
+    return $code
+  fi
+}
+
+
+
 ###EOF###
