@@ -12,6 +12,7 @@ cd $(dirname $0)
 PROVISIONING_NAMESPACE="/inaetics/node-provisioning-service"
 UPDATE_INTERVAL=60
 RETRY_INTERVAL=20
+LOG_DEBUG=true
 
 #
 # Libs
@@ -23,7 +24,7 @@ source etcdctl.sh
 #   args: $@ - the wrapped call
 #   return: the wrapped call's return
 _call () {
-  if [ "$BUILDER_DEBUG" != "true"  ]; then
+  if [ "$LOG_DEBUG" != "true"  ]; then
     $@ &> /dev/null
     return $?
   else
@@ -36,7 +37,7 @@ _call () {
 # with a debug prefix.
 #   args: $@ - the echo args
 _dbg() {
-  if [ "$BUILDER_DEBUG" == "true" ]; then
+  if [ "$LOG_DEBUG" == "true" ]; then
     echo $@ | awk '{print "[DEBUG] "$0}' >&2
   fi
 }
