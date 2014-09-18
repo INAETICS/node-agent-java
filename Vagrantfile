@@ -6,7 +6,7 @@ Vagrant.require_version ">= 1.6.0"
 
 $instance_name="node-agent-service-%02d"
 $instance_ip="172.17.8.2%02d"
-$num_instances = 1
+$num_instances = 2
 
 $coreos_channel="coreos-alpha"
 $coreos_version=">= 361.0.0"
@@ -30,6 +30,9 @@ Vagrant.configure("2") do |config|
       config.vm.network :private_network, ip: $instance_ip % i
 
       config.vm.provider :virtualbox do |virtualbox|
+        # virtualbox.customize ["modifyvm", :id, "--natdnshostresolver1", "on"]
+        # virtualbox.customize ["setextradata", :id, "VBoxInternal/Devices/e1000/0/LUN#0/Config/HostResolverMappings/docker_repository/HostIP", "172.17.8.120"]
+        # virtualbox.customize ["setextradata", :id, "VBoxInternal/Devices/e1000/0/LUN#0/Config/HostResolverMappings/docker_repository/HostNamePattern", "dockerregistry"]
         virtualbox.gui = $virtualbox_gui
         virtualbox.memory = $virtualbox_memory
         virtualbox.cpus = $virtualbox_cpus
