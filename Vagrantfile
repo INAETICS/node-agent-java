@@ -8,7 +8,8 @@ $instance_name="node-agent-service-%02d"
 $instance_ip="172.17.8.2%02d"
 $num_instances = 2
 
-$coreos_channel="coreos-alpha"
+$coreos_channel="alpha"
+$coreos_name="coreos-" + $coreos_channel 
 $coreos_version=">= 361.0.0"
 
 $virtualbox_gui = false
@@ -17,8 +18,7 @@ $virtualbox_cpus = 2
 
 Vagrant.configure("2") do |config|
 
-
-  config.vm.box = $coreos_channel
+  config.vm.box = $coreos_name
   config.vm.box_version = $coreos_version
   config.vm.box_url = "http://" + $coreos_channel + ".release.core-os.net/amd64-usr/current/coreos_production_vagrant.json"
 
