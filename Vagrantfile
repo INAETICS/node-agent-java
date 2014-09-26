@@ -13,7 +13,7 @@ $coreos_name="coreos-" + $coreos_channel
 $coreos_version=">= 361.0.0"
 
 $virtualbox_gui = false
-$virtualbox_memory = 4096
+$virtualbox_memory = 2048
 $virtualbox_cpus = 2
 
 Vagrant.configure("2") do |config|
