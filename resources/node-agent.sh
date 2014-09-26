@@ -92,7 +92,8 @@ start_agent () {
     -Dagent.discovery.serverurls=http://$current_provisioning_service \
     -Dorg.osgi.service.http.port=8080\
     -Damdatu.remote.logging.level=5\
-    -Dorg.amdatu.remote.discovery.etcd.connecturl=http://$ETCD_HOST\
+    -Damdatu.remote.console.level=5\
+    -Dorg.amdatu.remote.discovery.etcd.connecturl=http://$ETCDCTL_PEERS\
     -Dorg.amdatu.remote.discovery.etcd.rootpath=/discovery \
     -Dgosh.args=--nointeractive \
     -jar org.apache.ace.agent.launcher.felix.jar -v framework.org.osgi.framework.system.packages.extra=sun.misc &
