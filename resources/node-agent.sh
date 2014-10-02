@@ -93,6 +93,7 @@ start_agent () {
     -Dorg.osgi.service.http.port=8080\
     -Damdatu.remote.logging.level=5\
     -Damdatu.remote.console.level=5\
+    -Dorg.amdatu.remote.discovery.etcd.host=$agent_ipv4\
     -Dorg.amdatu.remote.discovery.etcd.connecturl=http://$ETCDCTL_PEERS\
     -Dorg.amdatu.remote.discovery.etcd.rootpath=/discovery \
     -Dgosh.args=--nointeractive \
