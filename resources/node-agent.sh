@@ -87,7 +87,7 @@ locate_provisioning_service () {
 }
 
 start_agent () {
-  java \
+  local cmd="java \
     -Dagent.identification.agentid=$agent_id \
     -Dagent.discovery.serverurls=http://$current_provisioning_service \
     -Dorg.osgi.service.http.port=8080\
@@ -98,7 +98,10 @@ start_agent () {
     -Dorg.amdatu.remote.discovery.etcd.rootpath=/discovery \
     -Dorg.amdatu.remote.admin.http.host=$agent_ipv4\
     -Dgosh.args=--nointeractive \
-    -jar org.apache.ace.agent.launcher.felix.jar -v framework.org.osgi.framework.system.packages.extra=sun.misc &
+    -jar org.apache.ace.agent.launcher.felix.jar -v framework.org.osgi.framework.system.packages.extra=sun.misc"
+
+  _dbg $cmd
+  $cmd &
   agent_pid=$!
 
   etcd/put "/inaetics/node-agent-service/$agent_id" "$agent_ipv4:8080"
