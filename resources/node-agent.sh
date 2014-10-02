@@ -96,6 +96,7 @@ start_agent () {
     -Dorg.amdatu.remote.discovery.etcd.host=$agent_ipv4\
     -Dorg.amdatu.remote.discovery.etcd.connecturl=http://$ETCDCTL_PEERS\
     -Dorg.amdatu.remote.discovery.etcd.rootpath=/discovery \
+    -Dorg.amdatu.remote.admin.http.host=$agent_ipv4\ 
     -Dgosh.args=--nointeractive \
     -jar org.apache.ace.agent.launcher.felix.jar -v framework.org.osgi.framework.system.packages.extra=sun.misc &
   agent_pid=$!
