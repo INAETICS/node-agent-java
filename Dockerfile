@@ -6,15 +6,17 @@ MAINTAINER Bram de Kruijff <bdekruijff@gmail.com> (@bdekruijff)
 
 # Generic update & tooling
 ENV DEBIAN_FRONTEND noninteractive
-RUN apt-get update && apt-get upgrade -yq && apt-get install -yq --no-install-recommends \
-  curl \
-  java-common \
-  jq \
+RUN apt-get update \
+  && apt-get upgrade -yq \
+  && apt-get install -yq --no-install-recommends \
+    curl \
+    openjdk-7-jre \
   && apt-get clean
 
-##ETCDCTL_INSTALL - instruct builder to install etcdctl
-
-##JDK_INSTALL - instruct builder to install a JDK
+# Install etcdctl
+RUN cd /tmp \
+  && curl -k -L https://github.com/coreos/etcd/releases/download/v0.4.6/etcd-v0.4.6-linux-amd64.tar.gz | tar xzf - \
+  && cp etcd-v0.4.6-linux-amd64/etcdctl /bin/
 
 # Node agent resources
 ADD resources /tmp
