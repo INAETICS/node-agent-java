@@ -90,12 +90,13 @@ start_agent () {
   local cmd="java \
     -Dagent.identification.agentid=$agent_id \
     -Dagent.discovery.serverurls=http://$current_provisioning_service \
+    -Dagent.controller.syncinterval=10\
     -Dorg.osgi.service.http.port=8080\
     -Damdatu.remote.logging.level=5\
     -Damdatu.remote.console.level=5\
     -Dorg.amdatu.remote.discovery.etcd.host=$agent_ipv4\
     -Dorg.amdatu.remote.discovery.etcd.connecturl=http://$ETCDCTL_PEERS\
-    -Dorg.amdatu.remote.discovery.etcd.rootpath=/discovery \
+    -Dorg.amdatu.remote.discovery.etcd.rootpath=/inaetics/discovery \
     -Dorg.amdatu.remote.admin.http.host=$agent_ipv4\
     -Dgosh.args=--nointeractive \
     -jar org.apache.ace.agent.launcher.felix.jar -v framework.org.osgi.framework.system.packages.extra=sun.misc"
