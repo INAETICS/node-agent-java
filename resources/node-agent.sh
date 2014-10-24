@@ -105,7 +105,7 @@ start_agent () {
   $cmd &
   agent_pid=$!
 
-  etcd/put "/inaetics/node-agent-service/$agent_id" "$agent_ipv4:8080"
+  etcd/put "/inaetics/node-agent-service/$agent_id" "$agent_ipv4:$agent_port"
 }
 
 stop_agent () {
@@ -129,14 +129,28 @@ trap clean_up SIGHUP SIGINT SIGTERM
 
 agent_id=$1
 if [ "$agent_id" == "" ]; then
+  # get docker id
+  agent_id=`cat /proc/self/cgroup | grep -o  -e "docker-.*.scope" | head -n 1 | sed "s/docker-\(.*\).scope/\\1/"`
+fi
+if [ "$agent_id" == "" ]; then
   echo "agent_id param required!"
   exit 1
 fi
 
 agent_ipv4=$2
 if [ "$agent_ipv4" == "" ]; then
+  # get IP from env variable set by kubernetes
+  agent_ipv4=$SERVICE_HOST
+fi
+if [ "$agent_ipv4" == "" ]; then
   echo "agent_ipv4 param required!"
   exit 1
+fi
+
+# get port from env variable set by kubernetes pod config
+agent_port=$HOSTPORT
+if [ "$agent_port" == "" ]; then
+  agent_port=8080
 fi
 
 while true; do
