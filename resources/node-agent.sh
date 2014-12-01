@@ -139,8 +139,8 @@ fi
 
 agent_ipv4=$2
 if [ "$agent_ipv4" == "" ]; then
-  # get IP from env variable set by kubernetes
-  agent_ipv4=$KUBERNETES_SERVICE_HOST
+  # get IP 
+  agent_ipv4=`hostname -I`
 fi
 if [ "$agent_ipv4" == "" ]; then
   echo "agent_ipv4 param required!"
