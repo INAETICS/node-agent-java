@@ -10,8 +10,11 @@ cd $(dirname $0)
 # Config
 #
 PROVISIONING_NAMESPACE="/inaetics/node-provisioning-service"
+MAX_RETRY_ETCD_REPO=10
+RETRY_ETCD_REPO_INTERVAL=5
 UPDATE_INTERVAL=60
 RETRY_INTERVAL=20
+ETCD_TTL_INTERVALL=$((UPDATE_INTERVAL + 15))
 LOG_DEBUG=true
 
 #
@@ -104,10 +107,37 @@ start_agent () {
   _dbg $cmd
   $cmd &
   agent_pid=$!
-
-  etcd/put "/inaetics/node-agent-service/$agent_id" "$agent_ipv4:$agent_port"
 }
 
+function store_etcd_data(){
+
+  # check if provisioning is running
+  if [ "$agent_pid" == "" ]; then
+  	_log "service not running, skipping store_etcd_data"
+    return
+  fi
+
+  ETCD_PATH_FOUND=0
+  RETRY=1
+  while [ $RETRY -le $MAX_RETRY_ETCD_REPO ] && [ $ETCD_PATH_FOUND -eq 0 ]
+  do
+    etcd/putTtl "/inaetics/node-agent-service/$agent_id" "$agent_ipv4:$agent_port" "$ETCD_TTL_INTERVALL"
+
+    if [ $? -ne 0 ]; then
+        _log "Tentative $RETRY of storing agent to etcd failed. Retrying..."
+        ((RETRY+=1))
+        sleep $RETRY_ETCD_REPO_INTERVAL
+    else
+        _log "Pair </inaetics/node-agent-service/$agent_id,$agent_ipv4:$agent_port> stored in etcd"
+        ETCD_PATH_FOUND=1
+    fi
+  done
+
+  if [ $ETCD_PATH_FOUND -eq 0 ]; then
+    _log "Cannot store pair </inaetics/node-agent-service/$agent_id,$agent_ipv4:$agent_port> in etcd"
+  fi
+
+}
 stop_agent () {
   etcd/rm "/inaetics/node-agent-service/$agent_id"
   if [ "$agent_pid" != "" ]; then
@@ -186,9 +216,9 @@ while true; do
     echo "Will retry in $RETRY_INTERVAL seconds..."
     sleep $RETRY_INTERVAL &
     wait $!
-    
   else
     echo "agent running with provisioning $current_provisioning_service"
+    store_etcd_data
     echo "Will update in $UPDATE_INTERVAL seconds..."
     sleep $UPDATE_INTERVAL &
     wait $!
