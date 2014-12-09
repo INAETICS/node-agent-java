@@ -159,6 +159,14 @@ trap clean_up SIGHUP SIGINT SIGTERM
 
 agent_id=$1
 if [ "$agent_id" == "" ]; then
+  # get id from env variable set by kubernetes pod config
+  agent_id=$AGENT_NAME
+  if [ "$agent_id" != "" ]; then
+  	# append ip
+    agent_id=$agent_id-`hostname -i`
+  fi
+fi
+if [ "$agent_id" == "" ]; then
   # get docker id
   agent_id=`cat /proc/self/cgroup | grep -o  -e "docker-.*.scope" | head -n 1 | sed "s/docker-\(.*\).scope/\\1/"`
 fi
