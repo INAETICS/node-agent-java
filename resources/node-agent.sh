@@ -102,6 +102,7 @@ start_agent () {
     -Dorg.amdatu.remote.discovery.etcd.rootpath=/inaetics/discovery \
     -Dorg.amdatu.remote.admin.http.host=$agent_ipv4\
     -Dgosh.args=--nointeractive \
+    -agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=8000 \
     -jar org.apache.ace.agent.launcher.felix.jar -v framework.org.osgi.framework.system.packages.extra=sun.misc"
 
   _dbg $cmd
