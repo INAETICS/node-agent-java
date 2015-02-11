@@ -104,9 +104,8 @@ start_agent () {
 
   local props2=-Dgosh.args="--nointeractive --command telnetd --ip=0.0.0.0 start"
 
-
   _dbg $props1 "$props2"
-  java $props1 "$props2" -jar target.jar -v framework.org.osgi.framework.system.packages.extra=sun.misc &
+  java $props1 "$props2" -jar target.jar &
   agent_pid=$!
 }
 
