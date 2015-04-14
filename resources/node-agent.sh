@@ -96,12 +96,18 @@ start_agent () {
     -Dorg.osgi.service.http.port=8080 \
     -Damdatu.remote.logging.level=5 \
     -Damdatu.remote.console.level=5 \
-    -Dorg.amdatu.remote.discovery.etcd.host=$agent_ipv4 \
+	-Dorg.apache.felix.http.host=$agent_ipv4 \
     -Dorg.amdatu.remote.discovery.etcd.connecturl=http://$ETCDCTL_PEERS \
     -Dorg.amdatu.remote.discovery.etcd.rootpath=/inaetics/discovery \
     -Dorg.amdatu.remote.admin.http.host=$agent_ipv4 \
+	-Dorg.inaetics.wiring.discovery.etcd.zone=zone1 \
+	-Dorg.inaetics.wiring.discovery.etcd.node=$agent_id \
+	-Dorg.inaetics.wiring.discovery.etcd.connecturl=http://$ETCDCTL_PEERS \
+	-Dorg.inaetics.wiring.discovery.etcd.rootpath=/inaetics/wiring \
+	-Dorg.inaetics.wiring.admin.http.zone=zone1 \
+	-Dorg.inaetics.wiring.admin.http.node=$agent_id \
     -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=8000"
-
+    
   local props2=-Dgosh.args="--nointeractive --command telnetd --ip=0.0.0.0 start"
 
   _dbg $props1 "$props2"
