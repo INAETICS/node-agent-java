@@ -93,7 +93,7 @@ start_agent () {
   local props1="-Dagent.identification.agentid=$agent_id \
     -Dagent.discovery.serverurls=http://$current_provisioning_service \
     -Dagent.controller.syncinterval=10 \
-    -Dorg.osgi.service.http.port=8080 \
+    -Dorg.osgi.service.http.port=$agent_port \
     -Damdatu.remote.logging.level=5 \
     -Damdatu.remote.console.level=5 \
 	-Dorg.apache.felix.http.host=$agent_ipv4 \
