@@ -85,8 +85,9 @@ locate_provisioning_service () {
   fi
   if [ ${#provisioning_services[@]} -gt 0 ]; then
     located_provisioning_service=${provisioning_services[0]}
+    return 0
   fi
-  return 0
+  return 1
 }
 
 start_agent () {
