@@ -101,6 +101,8 @@ start_agent () {
     -Dorg.amdatu.remote.discovery.etcd.connecturl=http://$ETCDCTL_PEERS \
     -Dorg.amdatu.remote.discovery.etcd.rootpath=/inaetics/discovery \
     -Dorg.amdatu.remote.admin.http.host=$agent_ipv4 \
+    -Dinaetics.wiring.logging.level=5 \
+    -Dinaetics.wiring.console.level=5 \
 	-Dorg.inaetics.wiring.discovery.etcd.zone=zone1 \
 	-Dorg.inaetics.wiring.discovery.etcd.node=$agent_id \
 	-Dorg.inaetics.wiring.discovery.etcd.connecturl=http://$ETCDCTL_PEERS \
