@@ -112,7 +112,8 @@ start_agent () {
 	-Dorg.inaetics.demonstrator.coordinator.kubernetes_master_url=http://172.17.8.20:10260 \
 	-Dorg.inaetics.demonstrator.coordinator.queue_low_barrier=40 \
 	-Dorg.inaetics.demonstrator.coordinator.queue_high_barrier=60 \
-	-Dorg.inaetics.demonstrator.coordinator.processor_controller_name=inaetics-processor-controller \
+	-Dorg.inaetics.demonstrator.coordinator.felix_processor_controller_name=inaetics-processor-controller \
+	-Dorg.inaetics.demonstrator.coordinator.celix_processor_controller_name=inaetics-processor-celix-controller \
 	-Dorg.inaetics.demonstrator.coordinator.poll_interval=20 \
 	-Dorg.inaetics.demonstrator.coordinator.max_number_processors=5 \
     -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=8000"
