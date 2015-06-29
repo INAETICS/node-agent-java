@@ -114,8 +114,8 @@ start_agent () {
 	-Dorg.inaetics.demonstrator.coordinator.queue_high_barrier=60 \
 	-Dorg.inaetics.demonstrator.coordinator.felix_processor_controller_name=inaetics-processor-controller \
 	-Dorg.inaetics.demonstrator.coordinator.celix_processor_controller_name=inaetics-processor-celix-controller \
-	-Dorg.inaetics.demonstrator.coordinator.poll_interval=20 \
-	-Dorg.inaetics.demonstrator.coordinator.max_number_processors=5 \
+	-Dorg.inaetics.demonstrator.coordinator.poll_interval=10 \
+	-Dorg.inaetics.demonstrator.coordinator.max_number_processors=10 \
     -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=8000"
     
   local props2=-Dgosh.args="--nointeractive --command telnetd --ip=0.0.0.0 start"
