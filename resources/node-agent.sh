@@ -85,23 +85,39 @@ locate_provisioning_service () {
   fi
   if [ ${#provisioning_services[@]} -gt 0 ]; then
     located_provisioning_service=${provisioning_services[0]}
+    return 0
   fi
-  return 0
+  return 1
 }
 
 start_agent () {
   local props1="-Dagent.identification.agentid=$agent_id \
     -Dagent.discovery.serverurls=http://$current_provisioning_service \
     -Dagent.controller.syncinterval=10 \
-    -Dorg.osgi.service.http.port=8080 \
+    -Dorg.osgi.service.http.port=$agent_port \
     -Damdatu.remote.logging.level=5 \
     -Damdatu.remote.console.level=5 \
-    -Dorg.amdatu.remote.discovery.etcd.host=$agent_ipv4 \
+	-Dorg.apache.felix.http.host=$agent_ipv4 \
     -Dorg.amdatu.remote.discovery.etcd.connecturl=http://$ETCDCTL_PEERS \
     -Dorg.amdatu.remote.discovery.etcd.rootpath=/inaetics/discovery \
     -Dorg.amdatu.remote.admin.http.host=$agent_ipv4 \
+    -Dinaetics.wiring.logging.level=5 \
+    -Dinaetics.wiring.console.level=5 \
+	-Dorg.inaetics.wiring.discovery.etcd.zone=zone1 \
+	-Dorg.inaetics.wiring.discovery.etcd.node=$agent_id \
+	-Dorg.inaetics.wiring.discovery.etcd.connecturl=http://$ETCDCTL_PEERS \
+	-Dorg.inaetics.wiring.discovery.etcd.rootpath=/inaetics/wiring \
+	-Dorg.inaetics.wiring.admin.http.zone=zone1 \
+	-Dorg.inaetics.wiring.admin.http.node=$agent_id \
+	-Dorg.inaetics.demonstrator.kubernetesclient.master_url=http://172.17.8.20:10260 \
+	-Dorg.inaetics.demonstrator.coordinator.queue_low_barrier=40 \
+	-Dorg.inaetics.demonstrator.coordinator.queue_high_barrier=60 \
+	-Dorg.inaetics.demonstrator.coordinator.felix_processor_controller_name=inaetics-processor-controller \
+	-Dorg.inaetics.demonstrator.coordinator.celix_processor_controller_name=inaetics-processor-celix-controller \
+	-Dorg.inaetics.demonstrator.coordinator.poll_interval=10 \
+	-Dorg.inaetics.demonstrator.coordinator.max_number_processors=10 \
     -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=8000"
-
+    
   local props2=-Dgosh.args="--nointeractive --command telnetd --ip=0.0.0.0 start"
 
   _dbg $props1 "$props2"
