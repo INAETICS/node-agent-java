@@ -109,13 +109,12 @@ start_agent () {
 	-Dorg.inaetics.wiring.discovery.etcd.rootpath=/inaetics/wiring \
 	-Dorg.inaetics.wiring.admin.http.zone=zone1 \
 	-Dorg.inaetics.wiring.admin.http.node=$agent_id \
-	-Dorg.inaetics.demonstrator.kubernetesclient.master_url=http://172.17.8.20:10260 \
 	-Dorg.inaetics.demonstrator.coordinator.queue_low_barrier=40 \
-	-Dorg.inaetics.demonstrator.coordinator.queue_high_barrier=60 \
+	-Dorg.inaetics.demonstrator.coordinator.queue_high_barrier=50 \
 	-Dorg.inaetics.demonstrator.coordinator.felix_processor_controller_name=inaetics-processor-controller \
 	-Dorg.inaetics.demonstrator.coordinator.celix_processor_controller_name=inaetics-processor-celix-controller \
-	-Dorg.inaetics.demonstrator.coordinator.poll_interval=10 \
-	-Dorg.inaetics.demonstrator.coordinator.max_number_processors=10 \
+	-Dorg.inaetics.demonstrator.coordinator.poll_interval=5 \
+	-Dorg.inaetics.demonstrator.coordinator.max_number_processors=8 \
     -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=8000"
     
   local props2=-Dgosh.args="--nointeractive --command telnetd --ip=0.0.0.0 start"
