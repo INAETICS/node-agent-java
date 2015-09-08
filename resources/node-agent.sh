@@ -158,6 +158,7 @@ stop_agent () {
   if [ "$agent_pid" != "" ]; then
     kill -SIGTERM $agent_pid
     agent_pid=""
+    sleep 1
   fi
 }
 
