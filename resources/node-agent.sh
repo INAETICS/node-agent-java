@@ -12,9 +12,9 @@ cd $(dirname $0)
 PROVISIONING_NAMESPACE="/inaetics/node-provisioning-service"
 MAX_RETRY_ETCD_REPO=10
 RETRY_ETCD_REPO_INTERVAL=5
-UPDATE_INTERVAL=60
-RETRY_INTERVAL=20
-ETCD_TTL_INTERVALL=$((UPDATE_INTERVAL + 15))
+UPDATE_INTERVAL=10
+RETRY_INTERVAL=5
+ETCD_TTL_INTERVALL=$((UPDATE_INTERVAL + 5))
 LOG_DEBUG=true
 
 #
@@ -165,6 +165,7 @@ stop_agent () {
 clean_up () {
     echo "Running cleanup.."
     stop_agent
+    rm /tmp/health
     exit 0
 }
 
@@ -207,8 +208,19 @@ if [ "$agent_port" == "" ]; then
   agent_port=8080
 fi
 
+# we are healthy, used by kubernetes
+echo ok > /tmp/health
+
 while true; do
 
+  # we are not healthy anymore, when agent_pid is set but process is not running
+  if [ "$agent_pid" != "" ] && [ ! -d "/proc/$agent_pid" ] ; then
+    # clean up and exit loop
+    echo "agent process not running anymore, cleaning up..."
+    clean_up
+    break
+  fi
+  
   locate_provisioning_service
   if [ $? -ne 0 ]; then
     echo "Locating provisioning services in etcd failed. Keeping current state.." 1>&2
