@@ -2,10 +2,6 @@ sudo: required
 
 language: bash
 
-branches:
-  only:
-    - master
-
 services:
   - docker
 
@@ -13,4 +9,8 @@ before_install:
   - docker login -e="$DOCKER_EMAIL" -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD"
 
 install:
-  - docker build -t inaetics/felix-agent . && docker push inaetics/felix-agent
+  - docker build -t inaetics/felix-agent .
+
+after_sucess:
+  - test $TRAVIS_PULL_REQUEST == "false" && test $TRAVIS_BRANCH == "master" &&
+    docker push inaetics/felix-agent
