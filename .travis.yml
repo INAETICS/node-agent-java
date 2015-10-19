@@ -11,6 +11,6 @@ before_install:
 install:
   - docker build -t inaetics/felix-agent .
 
-after_sucess:
+after_success:
   - test $TRAVIS_PULL_REQUEST == "false" && test $TRAVIS_BRANCH == "master" &&
     docker push inaetics/felix-agent
