@@ -1,5 +1,5 @@
 # Dockerfile for inaetics/node-agent-service
-FROM slintes/jre8:java8-8u51
+FROM slintes/jre8:java8-8u65
 
 MAINTAINER Marc Sluiter <marc.sluiter@luminis.eu>
 
